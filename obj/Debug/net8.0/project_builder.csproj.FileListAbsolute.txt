@@ -1,0 +1,14 @@
+/home/j32587/Code/C#/project_builder/bin/Debug/net8.0/project_builder
+/home/j32587/Code/C#/project_builder/bin/Debug/net8.0/project_builder.deps.json
+/home/j32587/Code/C#/project_builder/bin/Debug/net8.0/project_builder.runtimeconfig.json
+/home/j32587/Code/C#/project_builder/bin/Debug/net8.0/project_builder.dll
+/home/j32587/Code/C#/project_builder/bin/Debug/net8.0/project_builder.pdb
+/home/j32587/Code/C#/project_builder/obj/Debug/net8.0/project_builder.GeneratedMSBuildEditorConfig.editorconfig
+/home/j32587/Code/C#/project_builder/obj/Debug/net8.0/project_builder.AssemblyInfoInputs.cache
+/home/j32587/Code/C#/project_builder/obj/Debug/net8.0/project_builder.AssemblyInfo.cs
+/home/j32587/Code/C#/project_builder/obj/Debug/net8.0/project_builder.csproj.CoreCompileInputs.cache
+/home/j32587/Code/C#/project_builder/obj/Debug/net8.0/project_builder.dll
+/home/j32587/Code/C#/project_builder/obj/Debug/net8.0/refint/project_builder.dll
+/home/j32587/Code/C#/project_builder/obj/Debug/net8.0/project_builder.pdb
+/home/j32587/Code/C#/project_builder/obj/Debug/net8.0/project_builder.genruntimeconfig.cache
+/home/j32587/Code/C#/project_builder/obj/Debug/net8.0/ref/project_builder.dll

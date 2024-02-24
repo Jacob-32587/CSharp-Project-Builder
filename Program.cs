@@ -1,5 +1,9 @@
 ﻿namespace Program;
+
+using System.Xml.Linq;
 using CommandLine;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis;
 using Spectre.Console;
 
 public enum RequestSelectionChoices {
@@ -8,6 +12,17 @@ public enum RequestSelectionChoices {
     Insert,
     Upsert,
     Delete,
+}
+
+public class ClientProject {
+    public string? Model  { get; set; }
+    public string? DataLayer { get; set; }
+}
+
+public class ConnectedProjects {
+    public List<ClientProject>? ApiClients { get; set; }
+    public string? Model { get; set; }
+    public string? DataLayer { get; set; }
 }
 
 public class Program {
@@ -22,13 +37,17 @@ public class Program {
                         _ProjectPath = absolute_file_path;
                         Console.WriteLine("Good");
                     } else {
-                        AnsiConsole.Markup($"[red]Could not parse '{Path.Join(Environment.CurrentDirectory, value)}' as a valid file path[/]", Console.Error);
+                        AnsiConsole.Markup(
+                            $"[red]Could not parse '{Path.Join(Environment.CurrentDirectory, value)}'" +
+                            "as a valid file path[/]",
+                            Console.Error
+                        );
                         Environment.Exit(1);
                     }
                 }
             }
     }
-    static int Main(string[] args) {
+    static async Task<int> Main(string[] args) {
         ParserResult<Options>? op;
         try {
             op = Parser.Default.ParseArguments<Options>(args);
@@ -40,7 +59,8 @@ public class Program {
             return 1;
         }
         var options = op.Value;
-        Console.WriteLine(options.ProjectPath);
+
+        var fileReadTask = File.ReadAllBytesAsync(options.ProjectPath);
 
         var requestType = AnsiConsole.Prompt(
             new SelectionPrompt<RequestSelectionChoices>()
@@ -54,7 +74,22 @@ public class Program {
                     RequestSelectionChoices.Delete, 
                 ])
         );
-        Console.WriteLine(requestType);
+        var rawFileData = System.Text.Encoding.UTF8.GetString(await fileReadTask);
+        var projDoc = XElement.Parse(rawFileData ?? "");
+        
+        var projRefEls = projDoc.Elements("ItemGroup").Elements("ProjectReference");
+
+        var clients = projRefEls.ToList().Where(x => x.Attributes().Any(x => x.Name == "Client")).ToList();
+        var model = projRefEls.Where(x => x.Attributes().Any(x => x.Name == "Models")).ToList();
+        if(model.Count > 1) {
+            AnsiConsole.WriteLine(
+                $"[red] You may only assign 1 project reference as your model project, found {model.Count}"
+            );
+        }
+
+        Console.WriteLine(string.Join(",", clients));
+        Console.WriteLine(string.Join(",", model));
+
         return 0;
     }
 

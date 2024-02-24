@@ -1,0 +1,6 @@
+@AWSApi_HostAddress = http://localhost:5068
+
+GET {{AWSApi_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

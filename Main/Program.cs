@@ -5,41 +5,21 @@ using Microsoft.CodeAnalysis;
 using Spectre.Console;
 using Microsoft.CodeAnalysis.MSBuild;
 using Microsoft.Build.Locator;
+using Models.Enums;
+using Models.Objects;
 using Types;
 
-public enum RequestSelectionChoices {
-    Get,
-    Update,
-    Insert,
-    Upsert,
-    Delete,
-}
 
-public enum ProjectType {
-    Client,
-    Dao,
-    Microservice,
-    Api,
-}
+// public class ClientProject {
+//     public string? Model  { get; set; }
+//     public string? Dao { get; set; }
+// }
 
-public class ProjectSelection(Project project) {
-    public Project Project = project;
-
-    public override string ToString() {
-        return Project.Name;
-    }
-}
-
-public class ClientProject {
-    public string? Model  { get; set; }
-    public string? Dao { get; set; }
-}
-
-public class ConnectedProjects {
-    public List<ClientProject>? ApiClients { get; set; }
-    public string? Model { get; set; }
-    public string? Dao { get; set; }
-}
+// public class ConnectedProjects {
+//     public List<ClientProject>? ApiClients { get; set; }
+//     public string? Model { get; set; }
+//     public string? Dao { get; set; }
+// }
 
 public class Program {
     public class Options {
@@ -102,15 +82,15 @@ public class Program {
         var solTask = workspace.OpenSolutionAsync(options.SolPath);
 
         var reqType = AnsiConsole.Prompt(
-            new SelectionPrompt<RequestSelectionChoices>()
+            new SelectionPrompt<RequestChoices>()
                 .Title("Choose from one of the below endpoint types")
                 .PageSize(10)
                 .AddChoices([
-                    RequestSelectionChoices.Get,
-                    RequestSelectionChoices.Update,
-                    RequestSelectionChoices.Insert,
-                    RequestSelectionChoices.Upsert,
-                    RequestSelectionChoices.Delete,
+                    RequestChoices.Get,
+                    RequestChoices.Update,
+                    RequestChoices.Insert,
+                    RequestChoices.Upsert,
+                    RequestChoices.Delete,
                 ])
         );
         var sol = (await solTask).Expect("Fatal error, could not open solution");

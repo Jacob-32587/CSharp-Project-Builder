@@ -18,6 +18,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\lib\Extensions\Types\Types.csproj" />
+    <ProjectReference Include="..\lib\Models\Models.csproj" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="Spectre.Console">

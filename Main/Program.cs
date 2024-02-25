@@ -15,8 +15,14 @@ public enum RequestSelectionChoices {
     Delete,
 }
 
-public class ProjectSelection(Project project)
-{
+public enum ProjectType {
+    Client,
+    Dao,
+    Microservice,
+    Api,
+}
+
+public class ProjectSelection(Project project) {
     public Project Project = project;
 
     public override string ToString() {
@@ -26,35 +32,35 @@ public class ProjectSelection(Project project)
 
 public class ClientProject {
     public string? Model  { get; set; }
-    public string? DataLayer { get; set; }
+    public string? Dao { get; set; }
 }
 
 public class ConnectedProjects {
     public List<ClientProject>? ApiClients { get; set; }
     public string? Model { get; set; }
-    public string? DataLayer { get; set; }
+    public string? Dao { get; set; }
 }
 
 public class Program {
     public class Options {
-            private string? _ProjectPath;
+            private string? _SolPath;
             /// <summary>
             /// Valid absolute path to .sln file
             /// </summary>
             [Option('p', "project-path", Required = true, HelpText = "The relative/absolute path to your .csproj file")]
             public string SolPath {
-                get { return _ProjectPath!; }
+                get { return _SolPath!; }
                 set {
                     var cwd = Environment.CurrentDirectory;
                     var absolute_file_path = Path.Join(cwd, value);
                     
                     // Use provided file path, if none then attempt to find .sln in cwd
                     if(File.Exists(absolute_file_path)) {
-                        _ProjectPath = absolute_file_path;
+                        _SolPath = absolute_file_path;
                     } else {
                         var sln_file = Directory.GetFiles(cwd).First(x => x.EndsWith(".sln"));
                         if(sln_file is not null) {
-                            _ProjectPath = sln_file;
+                            _SolPath = sln_file;
                         } else {
                             AnsiConsole.Markup(
                                 $"[red]Could not parse '{absolute_file_path}'" +
@@ -76,8 +82,7 @@ public class Program {
 | |___|_  __  _| | |   | | | (_) | |  __/ (__| |_  | |_) | |_| | | | (_| |  __/ |
  \_____||_||_|   |_|   |_|  \___/| |\___|\___|\__| |____/ \__,_|_|_|\__,_|\___|_|
                                 _/ |
-                               |__/
-        [/]");
+                               |__/[/]");
         ParserResult<Options>? op;
         try {
             op = Parser.Default.ParseArguments<Options>(args);
@@ -96,7 +101,7 @@ public class Program {
 
         var solTask = workspace.OpenSolutionAsync(options.SolPath);
 
-        var requestType = AnsiConsole.Prompt(
+        var reqType = AnsiConsole.Prompt(
             new SelectionPrompt<RequestSelectionChoices>()
                 .Title("Choose from one of the below endpoint types")
                 .PageSize(10)
@@ -110,7 +115,7 @@ public class Program {
         );
         var sol = (await solTask).Expect("Fatal error, could not open solution");
         
-        var projectSelection = sol.Projects.Where(
+        var projSelection = sol.Projects.Where(
             x => x.CompilationOptions?.OutputKind != OutputKind.DynamicallyLinkedLibrary
         ).Select(x => new ProjectSelection(x)).ToList();
 
@@ -120,9 +125,21 @@ public class Program {
                 .EnableSearch()
                 .PageSize(15)
                 .AddChoices(
-                    projectSelection
+                    projSelection
                 )
         );
+        var projType = DetermineProjectType(project.Project);
+
+        if(projType == ProjectType.Dao) {
+
+        }
+
+        var depGraph = sol.GetProjectDependencyGraph();
+
+        depGraph.GetProjectsThatThisProjectTransitivelyDependsOn(project.Project.Id);
+        // var projects = project.Project.ProjectReferences.Select(
+        //     x => sol.Projects.Where(z => z.Id == z.Id).First()
+        // );
 
         // project.Project
 
@@ -144,5 +161,27 @@ public class Program {
 
         return 0;
     }
-
+    private static ProjectType DetermineProjectType(Project proj) {
+        return proj.Name.ToLower() switch {
+            var name when name.Contains("dao") | name.Contains("datalayer") => ProjectType.Dao,
+            var name when name.EndsWith(".api") => ProjectType.Api,
+            var name when name.Contains("microservice") => ProjectType.Microservice,
+            var name when name.Contains("client") => ProjectType.Client,
+            _ => PromptForProjectType()
+        };
+    }
+    private static ProjectType PromptForProjectType() {
+        AnsiConsole.Markup("[yellow]Unable to detect project type[/]");
+        return AnsiConsole.Prompt(
+            new SelectionPrompt<ProjectType>()
+                .Title("Choose from one of the below endpoint types")
+                .PageSize(10)
+                .AddChoices([
+                    ProjectType.Api,
+                    ProjectType.Client,
+                    ProjectType.Dao,
+                    ProjectType.Microservice,
+                ])
+        );
+    }
 }

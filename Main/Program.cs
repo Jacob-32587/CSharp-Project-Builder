@@ -94,7 +94,7 @@ public class Program {
                 ])
         );
         var sol = (await solTask).Expect("Fatal error, could not open solution");
-        
+
         var projSelection = sol.Projects.Where(
             x => x.CompilationOptions?.OutputKind != OutputKind.DynamicallyLinkedLibrary
         ).Select(x => new ProjectSelection(x)).ToList();
@@ -103,15 +103,30 @@ public class Program {
             new SelectionPrompt<ProjectSelection>()
                 .Title("Choose what project needs and endpoint added")
                 .EnableSearch()
-                .PageSize(15)
+                .PageSize(10)
                 .AddChoices(
                     projSelection
                 )
         );
         var projType = DetermineProjectType(project.Project);
 
-        if(projType == ProjectType.Dao) {
+        var operationType = AnsiConsole.Prompt(
+            new SelectionPrompt<OperationType>()
+                .Title("Are you planing to create new file(s) or add to pre-existing one(s)?")
+                .EnableSearch()
+                .PageSize(4)
+                .AddChoices([
+                    OperationType.CreateNewFiles,
+                    OperationType.AddToExistingFiles
+                ])
+        );
 
+        if(projType == ProjectType.Dao) {
+            if(operationType == OperationType.CreateNewFiles) {
+
+            } else if(operationType == OperationType.CreateNewFiles) {
+
+            }
         }
 
         var depGraph = sol.GetProjectDependencyGraph();
@@ -144,17 +159,17 @@ public class Program {
     private static ProjectType DetermineProjectType(Project proj) {
         return proj.Name.ToLower() switch {
             var name when name.Contains("dao") | name.Contains("datalayer") => ProjectType.Dao,
-            var name when name.EndsWith(".api") => ProjectType.Api,
+            var name when name.EndsWith("api") => ProjectType.Api,
             var name when name.Contains("microservice") => ProjectType.Microservice,
             var name when name.Contains("client") => ProjectType.Client,
             _ => PromptForProjectType()
         };
     }
     private static ProjectType PromptForProjectType() {
-        AnsiConsole.Markup("[yellow]Unable to detect project type[/]");
+        // AnsiConsole.Markup("[yellow]Unable to detect project type[/]");
         return AnsiConsole.Prompt(
             new SelectionPrompt<ProjectType>()
-                .Title("Choose from one of the below endpoint types")
+                .Title("[yellow]Unable to detect project type[/], choose from one of the below")
                 .PageSize(10)
                 .AddChoices([
                     ProjectType.Api,

@@ -47,8 +47,8 @@ public class Program {
             /// <summary>
             /// Valid absolute path to .sln file
             /// </summary>
-            [Option('p', "project-path", Required = true, HelpText = "The relative/absolute path to your .csproj file")]
-            public string SolPath {
+            [Option('s', "solution-path", Required = true, HelpText = "The relative/absolute path to your .sln file")]
+            public required string SolPath {
                 get { return _SolPath!; }
                 set {
                     var cwd = Environment.CurrentDirectory;
@@ -72,6 +72,9 @@ public class Program {
                     }
                 }
             }
+
+        [Option('p', "project-path", Required = false, HelpText = "Name of the project to modify")]
+        public string? ProjName { get; set; }
     }
     static async Task<int> Main(string[] args) {
         AnsiConsole.Markup(@"[blue]
@@ -83,6 +86,7 @@ public class Program {
  \_____||_||_|   |_|   |_|  \___/| |\___|\___|\__| |____/ \__,_|_|_|\__,_|\___|_|
                                 _/ |
                                |__/[/]");
+        Console.WriteLine("");
         ParserResult<Options>? op;
         try {
             op = Parser.Default.ParseArguments<Options>(args);
@@ -115,9 +119,13 @@ public class Program {
         );
         var sol = (await solTask).Expect("Fatal error, could not open solution");
         
-        var projSelection = sol.Projects.Where(
-            x => x.CompilationOptions?.OutputKind != OutputKind.DynamicallyLinkedLibrary
-        ).Select(x => new ProjectSelection(x)).ToList();
+        // Do not selected any projects that are dlls
+        var projSelection = sol.Projects
+            .Where(
+                x => x.CompilationOptions?.OutputKind != OutputKind.DynamicallyLinkedLibrary
+            )
+            .Select(x => new ProjectSelection(x))
+            .ToList();
 
         var project = AnsiConsole.Prompt(
             new SelectionPrompt<ProjectSelection>()
@@ -128,6 +136,7 @@ public class Program {
                     projSelection
                 )
         );
+
         var projType = DetermineProjectType(project.Project);
 
         if(projType == ProjectType.Dao) {
@@ -137,34 +146,21 @@ public class Program {
         var depGraph = sol.GetProjectDependencyGraph();
 
         depGraph.GetProjectsThatThisProjectTransitivelyDependsOn(project.Project.Id);
-        // var projects = project.Project.ProjectReferences.Select(
-        //     x => sol.Projects.Where(z => z.Id == z.Id).First()
-        // );
+        var projects = project.Project.ProjectReferences.Select(
+            x => sol.Projects.Where(z => z.Id == z.Id).First()
+        );
 
-        // project.Project
 
-        // var rawFileData = System.Text.Encoding.UTF8.GetString(await fileReadTask);
-        // var projDoc = XElement.Parse(rawFileData ?? "");
-        
-        // var projRefEls = projDoc.Elements("ItemGroup").Elements("ProjectReference");
-
-        // var clients = projRefEls.ToList().Where(x => x.Attributes().Any(x => x.Name == "Client")).ToList();
-        // var model = projRefEls.Where(x => x.Attributes().Any(x => x.Name == "Models")).ToList();
-        // if(model.Count > 1) {
-        //     AnsiConsole.WriteLine(
-        //         $"[red] You may only assign 1 project reference as your model project, found {model.Count}"
-        //     );
-        // }
-
-        // Console.WriteLine(string.Join(",", clients));
-        // Console.WriteLine(string.Join(",", model));
+        Console.WriteLine("");
+        Console.WriteLine("");
+        Console.WriteLine(string.Join(",", projects.Select(x => x.FilePath)));
 
         return 0;
     }
     private static ProjectType DetermineProjectType(Project proj) {
         return proj.Name.ToLower() switch {
             var name when name.Contains("dao") | name.Contains("datalayer") => ProjectType.Dao,
-            var name when name.EndsWith(".api") => ProjectType.Api,
+            var name when name.Contains("api") => ProjectType.Api,
             var name when name.Contains("microservice") => ProjectType.Microservice,
             var name when name.Contains("client") => ProjectType.Client,
             _ => PromptForProjectType()
@@ -172,9 +168,10 @@ public class Program {
     }
     private static ProjectType PromptForProjectType() {
         AnsiConsole.Markup("[yellow]Unable to detect project type[/]");
+        Console.WriteLine("");
         return AnsiConsole.Prompt(
             new SelectionPrompt<ProjectType>()
-                .Title("Choose from one of the below endpoint types")
+                .Title("Choose from one of the below project types")
                 .PageSize(10)
                 .AddChoices([
                     ProjectType.Api,
